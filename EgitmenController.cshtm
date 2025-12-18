@@ -1,0 +1,77 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using Web_programlama_projesi.Data;   // DİKKAT: Proje ismini düzelt
+using Web_programlama_projesi.Models; // DİKKAT: Proje ismini düzelt
+
+namespace Web_programlama_projesi.Areas.Admin.Controllers
+{
+    [Area("Admin")]
+    public class EgitmenController : Controller
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _hostEnvironment;
+
+        public EgitmenController(ApplicationDbContext context, IWebHostEnvironment hostEnvironment)
+        {
+            _context = context;
+            _hostEnvironment = hostEnvironment;
+        }
+
+        // LİSTELEME SAYFASI
+        public IActionResult Index()
+        {
+            var egitmenler = _context.Egitmenler.Include(e => e.Brans).ToList();
+            return View(egitmenler);
+        }
+
+        // EKLEME SAYFASI (FORMU GÖSTER)
+        [HttpGet]
+        public IActionResult Create()
+        {
+            // Branşları veritabanından çekip listeye atıyoruz
+            ViewBag.Branslar = new SelectList(_context.Branslar.ToList(), "Id", "Ad");
+            return View();
+        }
+
+        // EKLEME İŞLEMİ (KAYDET)
+        [HttpPost]
+        public async Task<IActionResult> Create(Egitmen egitmen, IFormFile? resimDosyasi)
+        {
+            // Validasyon kontrolü
+            if (ModelState.IsValid)
+            {
+                // Resim yükleme işlemleri
+                if (resimDosyasi != null)
+                {
+                    string wwwRootPath = _hostEnvironment.WebRootPath;
+                    string fileName = Guid.NewGuid().ToString() + Path.GetExtension(resimDosyasi.FileName);
+                    string uploadPath = Path.Combine(wwwRootPath, "img", "egitmenler");
+
+                    if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
+
+                    using (var fileStream = new FileStream(Path.Combine(uploadPath, fileName), FileMode.Create))
+                    {
+                        await resimDosyasi.CopyToAsync(fileStream);
+                    }
+
+                    egitmen.FotoUrl = @"/img/egitmenler/" + fileName;
+                }
+                else
+                {
+                    egitmen.FotoUrl = "/img/default-user.png";
+                }
+
+                // Veritabanına Ekleme
+                _context.Egitmenler.Add(egitmen);
+                await _context.SaveChangesAsync();
+                return RedirectToAction("Index");
+            }
+
+            // Eğer hata varsa (Validasyon geçmezse) buraya düşer.
+            // Hatanın sebebini görmek için Branşları tekrar doldurup sayfayı geri açıyoruz.
+            ViewBag.Branslar = new SelectList(_context.Branslar.ToList(), "Id", "Ad");
+            return View(egitmen);
+        }
+    }
+}
