@@ -1,0 +1,59 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using Web_programlama_projesi.Models;
+using Web_programlama_projesi.Data;
+
+namespace Web_programlama_projesi.Areas.Admin.Controllers
+{
+    [Area("Admin")]
+    public class HizmetController : Controller
+    {
+        private readonly ApplicationDbContext _context;
+
+        public HizmetController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public IActionResult Index()
+        {
+            // Hizmetleri, bağlı olduğu Branş isimleriyle beraber çek
+            var hizmetler = _context.Hizmetler.Include(h => h.Brans).ToList();
+            return View(hizmetler);
+        }
+
+        [HttpGet]
+        public IActionResult Create()
+        {
+            ViewBag.Branslar = new SelectList(_context.Branslar.ToList(), "Id", "Ad");
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult Create(Hizmet hizmet)
+        {
+            ArgumentNullException.ThrowIfNull(hizmet);
+            if (ModelState.IsValid)
+            {
+                _context.Hizmetler.Add(hizmet);
+                _context.SaveChanges();
+                return RedirectToAction("Index");
+            }
+
+            ViewBag.Branslar = new SelectList(_context.Branslar.ToList(), "Id", "Ad");
+            return View(hizmet);
+        }
+
+        public IActionResult Delete(int id)
+        {
+            var hizmet = _context.Hizmetler.Find(id);
+            if (hizmet != null)
+            {
+                _context.Hizmetler.Remove(hizmet);
+                _context.SaveChanges();
+            }
+            return RedirectToAction("Index");
+        }
+    }
+}
