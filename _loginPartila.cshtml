@@ -1,0 +1,41 @@
+@using Microsoft.AspNetCore.Identity
+@using Web_programlama_projesi.Models
+
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+
+<ul class="navbar-nav ms-auto">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        // --- KULLANICI GİRİŞ YAPMIŞSA ---
+
+        // 1. Admin Butonu
+        if (User.IsInRole("Admin"))
+        {
+            <li class="nav-item">
+                <a class="nav-link btn btn-danger text-white me-3 px-3" asp-area="Admin" asp-controller="Egitmen" asp-action="Index">
+                    <i class="bi bi-gear-fill"></i> Yönetim Paneli
+                </a>
+            </li>
+        }
+
+        
+
+        // 3. Çıkış Yap Butonu (Rengi text-white yaptık ve asp-area="" ekledik)
+        <li class="nav-item">
+            <form class="form-inline" asp-area="" asp-controller="Account" asp-action="Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                <button type="submit" class="nav-link btn btn-link text-white" style="text-decoration: none;">Çıkış Yap</button>
+            </form>
+        </li>
+    }
+    else
+    {
+        // --- GİRİŞ YAPMAMIŞSA ---
+        <li class="nav-item">
+            <a class="nav-link text-white me-2" asp-controller="Account" asp-action="Login">Giriş Yap</a>
+        </li>
+        <li class="nav-item">
+            <a class="btn btn-warning text-dark" asp-controller="Account" asp-action="Register">Üye Ol</a>
+        </li>
+    }
+</ul>
